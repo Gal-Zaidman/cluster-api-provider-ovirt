@@ -11,10 +11,11 @@ import (
 	"net"
 	"time"
 
-	clusterv1 "github.com/openshift/cluster-api/pkg/apis/cluster/v1alpha1"
-	machinev1 "github.com/openshift/cluster-api/pkg/apis/machine/v1beta1"
-	"github.com/openshift/cluster-api/pkg/client/clientset_generated/clientset/typed/machine/v1beta1"
-	ovirtsdk "github.com/ovirt/go-ovirt"
+	machinev1 "github.com/openshift/machine-api-operator/pkg/apis/machine/v1beta1"
+	apierrors "github.com/openshift/machine-api-operator/pkg/controller/machine"
+	"github.com/openshift/machine-api-operator/pkg/generated/clientset/versioned/typed/machine/v1beta1"
+	"github.com/openshift/machine-api-operator/pkg/util"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -25,9 +26,8 @@ import (
 	ovirtconfigv1 "github.com/openshift/cluster-api-provider-ovirt/pkg/apis/ovirtprovider/v1beta1"
 	"github.com/openshift/cluster-api-provider-ovirt/pkg/cloud/ovirt"
 	"github.com/openshift/cluster-api-provider-ovirt/pkg/cloud/ovirt/clients"
+	ovirtsdk "github.com/ovirt/go-ovirt"
 
-	apierrors "github.com/openshift/cluster-api/pkg/errors"
-	"github.com/openshift/cluster-api/pkg/util"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -59,7 +59,7 @@ func NewActuator(params ovirt.ActuatorParams) (*OvirtActuator, error) {
 	}, nil
 }
 
-func (actuator *OvirtActuator) Create(_ context.Context, _ *clusterv1.Cluster, machine *machinev1.Machine) error {
+func (actuator *OvirtActuator) Create(_ context.Context, machine *machinev1.Machine) error {
 	providerSpec, err := ovirtconfigv1.ProviderSpecFromRawExtension(machine.Spec.ProviderSpec.Value)
 	if err != nil {
 		return actuator.handleMachineError(machine, apierrors.InvalidMachineConfiguration(
@@ -133,7 +133,7 @@ func (actuator *OvirtActuator) Create(_ context.Context, _ *clusterv1.Cluster, m
 	return actuator.patchMachine(machine, instance, conditionSuccess())
 }
 
-func (actuator *OvirtActuator) Exists(_ context.Context, _ *clusterv1.Cluster, machine *machinev1.Machine) (bool, error) {
+func (actuator *OvirtActuator) Exists(_ context.Context, machine *machinev1.Machine) (bool, error) {
 	providerSpec, err := ovirtconfigv1.ProviderSpecFromRawExtension(machine.Spec.ProviderSpec.Value)
 	if err != nil {
 		return false, actuator.handleMachineError(machine, apierrors.InvalidMachineConfiguration(
@@ -156,7 +156,7 @@ func (actuator *OvirtActuator) Exists(_ context.Context, _ *clusterv1.Cluster, m
 	return vm != nil, err
 }
 
-func (actuator *OvirtActuator) Update(_ context.Context, _ *clusterv1.Cluster, machine *machinev1.Machine) error {
+func (actuator *OvirtActuator) Update(_ context.Context, machine *machinev1.Machine) error {
 	// eager update
 	providerSpec, err := ovirtconfigv1.ProviderSpecFromRawExtension(machine.Spec.ProviderSpec.Value)
 	if err != nil {
@@ -191,7 +191,7 @@ func (actuator *OvirtActuator) Update(_ context.Context, _ *clusterv1.Cluster, m
 	return actuator.patchMachine(machine, vm, conditionSuccess())
 }
 
-func (actuator *OvirtActuator) Delete(_ context.Context, _ *clusterv1.Cluster, machine *machinev1.Machine) error {
+func (actuator *OvirtActuator) Delete(_ context.Context, machine *machinev1.Machine) error {
 	providerSpec, err := ovirtconfigv1.ProviderSpecFromRawExtension(machine.Spec.ProviderSpec.Value)
 	if err != nil {
 		return actuator.handleMachineError(machine, apierrors.InvalidMachineConfiguration(
@@ -264,14 +264,14 @@ func (actuator *OvirtActuator) patchMachine(machine *machinev1.Machine, instance
 	klog.Info("Updating machine resource")
 
 	// TODO the namespace should be set on actuator creation. Remove the hardcoded openshift-machine-api.
-	newMachine, err := actuator.machinesClient.Machines("openshift-machine-api").Update(machine)
+	newMachine, err := actuator.machinesClient.Machines("openshift-machine-api").Update(context.TODO(), machine, metav1.UpdateOptions{})
 	if err != nil {
 		return err
 	}
 
 	newMachine.Status = statusCopy
 	klog.Info("Updating machine status sub-resource")
-	if _, err := actuator.machinesClient.Machines("openshift-machine-api").UpdateStatus(newMachine); err != nil {
+	if _, err := actuator.machinesClient.Machines("openshift-machine-api").UpdateStatus(context.TODO(), newMachine, metav1.UpdateOptions{}); err != nil {
 		return err
 	}
 	actuator.EventRecorder.Eventf(newMachine, corev1.EventTypeNormal, "Update", "Updated Machine %v", newMachine.Name)

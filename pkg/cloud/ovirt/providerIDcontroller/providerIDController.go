@@ -32,8 +32,6 @@ type providerIDReconciler struct {
 }
 
 func (r *providerIDReconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	r.log.V(3).Info("Reconciling", "node", request.NamespacedName)
-
 	// Fetch the Node instance
 	node := corev1.Node{}
 	err := r.client.Get(context.Background(), request.NamespacedName, &node)

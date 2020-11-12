@@ -6,11 +6,11 @@ SPDX-License-Identifier: Apache-2.0
 package clients
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"time"
 
-	"github.com/openshift/cluster-api/pkg/util"
 	"github.com/pkg/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -18,7 +18,8 @@ import (
 
 	ovirtsdk "github.com/ovirt/go-ovirt"
 
-	machinev1 "github.com/openshift/cluster-api/pkg/apis/machine/v1beta1"
+	machinev1 "github.com/openshift/machine-api-operator/pkg/apis/machine/v1beta1"
+	"github.com/openshift/machine-api-operator/pkg/util"
 
 	ovirtconfigv1 "github.com/openshift/cluster-api-provider-ovirt/pkg/apis/ovirtprovider/v1beta1"
 )
@@ -75,7 +76,7 @@ func (is *InstanceService) InstanceCreate(
 
 	userDataSecret, err := kubeClient.CoreV1().
 		Secrets(machine.Namespace).
-		Get(providerSpec.UserDataSecret.Name, v1.GetOptions{})
+		Get(context.TODO(), providerSpec.UserDataSecret.Name, v1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch user data secret for the machine namespace: %s", err)
 	}

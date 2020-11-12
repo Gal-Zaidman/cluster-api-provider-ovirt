@@ -30,9 +30,10 @@ import (
 	"github.com/openshift/cluster-api-provider-ovirt/pkg/cloud/ovirt/machine"
 	"github.com/openshift/cluster-api-provider-ovirt/pkg/cloud/ovirt/providerIDcontroller"
 
-	clusterapis "github.com/openshift/cluster-api/pkg/apis"
-	"github.com/openshift/cluster-api/pkg/client/clientset_generated/clientset"
-	capimachine "github.com/openshift/cluster-api/pkg/controller/machine"
+	machinev1 "github.com/openshift/machine-api-operator/pkg/apis/machine/v1beta1"
+	capimachine "github.com/openshift/machine-api-operator/pkg/controller/machine"
+	clientset "github.com/openshift/machine-api-operator/pkg/generated/clientset/versioned"
+
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -120,11 +121,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err != nil {
-		entryLog.Error(err, "Unable to set up overall controller manager")
-		os.Exit(1)
-	}
-
 	kubeClient, err := kubernetes.NewForConfig(mgr.GetConfig())
 	if err != nil {
 		entryLog.Error(err, "Failed to create kubernetes client from configuration")
@@ -139,7 +135,7 @@ func main() {
 		panic(err)
 	}
 
-	if err := clusterapis.AddToScheme(mgr.GetScheme()); err != nil {
+	if err := machinev1.AddToScheme(mgr.GetScheme()); err != nil {
 		panic(err)
 	}
 
