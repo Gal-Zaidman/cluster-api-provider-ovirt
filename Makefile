@@ -21,8 +21,6 @@ VERSION?=$(shell git describe --tags --always --match "v[0-9]*" | awk -F'-' '{pr
 RELEASE?=$(shell git describe --tags --always --match "v[0-9]*" | awk -F'-' '{if ($$2 != "") {print $$2 "." $$3} else {print 1}}')
 VERSION_RELEASE=$(VERSION)$(if $(RELEASE),-$(RELEASE))
 
-CLUSTER_API ?= github.com/openshift/cluster-api
-
 .PHONY: vendor
 vendor:
 	go mod tidy
@@ -37,10 +35,6 @@ work: $(GOBIN)
 
 #build: export BUILDAH_LAYERS=true
 build:
-	CGO_ENABLED=0 GOOS=$(GOOS) go build \
-		-ldflags $(LDFLAGS) \
-		-o bin/manager \
-		vendor/$(CLUSTER_API)/cmd/manager/main.go
 	CGO_ENABLED=0 GOOS=$(GOOS) go build \
 		-ldflags $(LDFLAGS) \
 		-o bin/machine-controller-manager \
@@ -98,7 +92,7 @@ env:
 	go env
 
 clean:
-	rm -rf _dist bin/manager bin/clusterctl
+	rm -rf _dist bin/manager
 
 realclean: clean
 	rm -rf vendor

@@ -32,5 +32,4 @@ RUN make build
 
 FROM registry.svc.ci.openshift.org/ocp/4.7:base
 
-COPY --from=builder /go/cluster-api-provider-ovirt/bin/manager /
 COPY --from=builder /go/cluster-api-provider-ovirt/bin/machine-controller-manager /
