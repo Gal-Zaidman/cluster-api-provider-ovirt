@@ -6,7 +6,7 @@ require (
 	github.com/go-logr/logr v0.2.1
 	github.com/go-logr/zapr v0.2.0 // indirect
 	github.com/openshift/machine-api-operator v0.2.1-0.20201111151924-77300d0c997a
-	github.com/ovirt/go-ovirt v0.0.0-20200428093010-9bcc4fd4e6c0
+	github.com/ovirt/go-ovirt v0.0.0-20201023070830-77e357c438d5
 	github.com/pkg/errors v0.9.1
 	k8s.io/api v0.19.0
 	k8s.io/apimachinery v0.19.0
